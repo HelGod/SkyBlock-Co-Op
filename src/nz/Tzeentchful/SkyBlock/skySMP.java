@@ -43,7 +43,7 @@ public class skySMP extends JavaPlugin {
     private static int SPAWN_Z = 0;
     private Island lastIsland;
     private List<Party> partyList = new ArrayList<Party>();
-    private static int ISLANDS_Y = 190;
+    private static int ISLANDS_Y = 100;
     private static int ISLAND_SPACING = 120;
     public static Permission perms = null;
     public static Economy econ = null;
@@ -156,12 +156,14 @@ public class skySMP extends JavaPlugin {
 	public void loadconfig(){
 		getConfig().addDefault("SkyWorld", "SkyWorld");
 		getConfig().addDefault("SpawnWorld", "world");
+                getConfig().addDefault("IslandHeight", "100");
 		
 		getConfig().options().copyDefaults(true);
 		saveConfig();
 		
 		skyworld = getServer().getWorld(getConfig().getString("SkyWorld"));
 		spawnworld = getServer().getWorld(getConfig().getString("SpawnWorld"));
+                ISLANDS_Y = getConfig().getInt("IslandHeight");
 	}
     
     public boolean hasIsland(final Player player) {
