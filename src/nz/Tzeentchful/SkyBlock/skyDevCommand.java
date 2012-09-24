@@ -23,13 +23,13 @@ public class skyDevCommand implements CommandExecutor {
     
 	@Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] split) {
-        if (!(sender instanceof Player) || !(sender.isOp()) ){
+        if (!(sender instanceof Player) || !(sender.hasPermission("sbenhanced.skydev")) ){
             return false;
         }
 		//sender.sendMessage("The last island location is: " +plugin.getLastIsland().x + " / " +plugin.getLastIsland().z);
 		Player player = (Player) sender;
 		if (split.length == 0) {
-        	if (sender.isOp())
+        	if (sender.hasPermission("sbenhanced.skydev"))
         	{
         		player.sendMessage("[skydev usage]");
         		player.sendMessage("/skydev addorphan: the next person to make an island will use your location.");
@@ -41,13 +41,13 @@ public class skyDevCommand implements CommandExecutor {
         	}else
         		player.sendMessage("You don't have permission to use this command.");
            	}else if (split.length == 1) {
-        	if (split[0].equals("lastisland") && player.isOp())
+        	if (split[0].equals("lastisland") && sender.hasPermission("sbenhanced.skydev"))
         	{
         		registerIsland = new Island(); 
             	registerIsland.x = player.getLocation().getBlockX();
             	registerIsland.z = player.getLocation().getBlockZ();
         		plugin.setLastIsland(registerIsland);
-        	}else if (split[0].equals("forcesave") && player.isOp())
+        	}else if (split[0].equals("forcesave") && sender.hasPermission("sbenhanced.skydev"))
         	{
         		try {
         			SLAPI.save(plugin.getPlayers(), "playerIslands.bin");
@@ -71,7 +71,7 @@ public class skyDevCommand implements CommandExecutor {
            	}else if (split[0].equals("clearorphan") && player.isOp())
         	{
         		plugin.clearOrphanedIsland();
-        	}else if (split[0].equals("offline") && player.isOp())
+        	}else if (split[0].equals("offline") && sender.hasPermission("sbenhanced.skydev"))
         	{
         		OfflinePlayer[] oplayers;
             	long offlineTime;
@@ -92,13 +92,13 @@ public class skyDevCommand implements CommandExecutor {
                 	registerIsland.x = player.getLocation().getBlockX();
                 	registerIsland.z = player.getLocation().getBlockZ();;
             		plugin.registerPlayerIsland(split[1], registerIsland);
-            	}else if (split[0].equals("protect") && player.isOp())
+            	}else if (split[0].equals("protect") && sender.hasPermission("sbenhanced.skydev"))
             	{
             		plugin.protectIsland(sender, split[1]);
             	}else if (split[0].equals("unregister") && player.isOp())
             	{
             		plugin.unregisterPlayerIsland(split[1]);
-            	}else if (split[0].equals("check") && player.isOp())
+            	}else if (split[0].equals("check") && sender.hasPermission("sbenhanced.skydev"))
         	    {
         		if (plugin.hasIsland(split[1]))
         		{	
@@ -106,7 +106,7 @@ public class skyDevCommand implements CommandExecutor {
         		player.sendMessage(split[1] + " has an island at: " + registerIsland.x + "/" + registerIsland.z);
         		}else
         			player.sendMessage(split[1] + " does not have an island registered.");
-                }else if (split[0].equals("offline") && player.isOp())
+                }else if (split[0].equals("offline") && sender.hasPermission("sbenhanced.skydev"))
             	{
             		OfflinePlayer[] oplayers;
                 	long offlineTime;
