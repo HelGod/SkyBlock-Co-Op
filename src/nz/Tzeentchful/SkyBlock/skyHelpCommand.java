@@ -27,9 +27,9 @@ public class skyHelpCommand implements CommandExecutor {
         	sender.sendMessage("Skyblock gives you a tiny map in the sky. Survive, expand, and build a sky empire!" );
         	sender.sendMessage("Commands:");
         	sender.sendMessage("/newIsland [replace]: gives you a new Island (and starting items) or replaces your old one");
-        	sender.sendMessage("/tphome: Teleports you to your island.");
+        	sender.sendMessage("/home: Teleports you to your island.");
         	//sender.sendMessage("/skyTasks or /t : Show a list of tasks that can be completed for rewards.");
-        	sender.sendMessage("/party : Join a skyblocking party (max 4 people)");
+        	sender.sendMessage("/party invite <FULL Playername>: Invite someone to your party! (Max 4 people)");
         	//sender.sendMessage("/skybucks : See the best skyblockers and how many skybucks you have");
         	//sender.sendMessage("/skyhelp : Print this help message");
         }else if (split.length == 1) {
