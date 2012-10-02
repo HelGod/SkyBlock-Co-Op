@@ -1,32 +1,12 @@
 name: SkyBlockCo-Op
 main: nz.Tzeentchful.SkyBlock.skySMP
-version: 1.4.1
+version: 1.5
 description: skyIsland SMP mod. Survive on a small island in the sky with only basic supplies. Try to beat the challenges.
 softdepend: [CleanroomGenerator]
-depend: [Vault, WorldGuard, WorldEdit]
-author: Talabrek (based on code by Qgel)
+depend: [WorldGuard, WorldEdit]
+author: Tzeentchful & thekillerofevil
 commands:
-    newIsland:
-        description: Creates a new SkyIsland.
-        usage:  |
-             /newIsland [replace]
-    removeIsland:
-        description: Removes the island of a given player.
-        usage:  |
-            /removeIsland <playername>
-    tphome:
-        description: Teleport to your island.
-        usage:  |
-            /tphome
-    skyHelp:
-        description: Outputs all the commands and info about the skySMP plugin
-        usage:  |
-            /skyHelp [c(hallenges)]      
-    party:
-        description: form a party with up to 4 people
-        usage:  |
-            /party [invite/accept/reject]
-    skydev:
-        description: Outputs dev data
-        usage:  |
-            /skydev <lastisland>
+    skyblock:
+        description: All commands for Skyblock Co-Op
+        usage: /skyblock help
+        aliases: sb
