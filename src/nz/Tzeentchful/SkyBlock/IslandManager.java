@@ -1,14 +1,19 @@
 package nz.Tzeentchful.SkyBlock;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
 
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.TreeType;
 import org.bukkit.World;
@@ -23,6 +28,7 @@ import org.bukkit.plugin.Plugin;
 
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.databases.ProtectionDatabaseException;
@@ -38,7 +44,7 @@ public class IslandManager {
 	private HashMap<String, Island> playerIslands = null;
 	private Stack<Island> orphaned = null;
 
-	private Island lastIsland = null;
+	private Island lastIsland = new Island(0, 0);
 	private skySMP plugin;
 	private static int islandY = 190;
 	private static int islandSpacing = 120;
@@ -196,20 +202,36 @@ public class IslandManager {
 
 	public boolean createIsland(Player player) {
 		Island last = lastIsland;
+		int bf = orphaned.size();
+		boolean dolast = false;
 		try {
 			Island next;
 			//if we have space because of a deleted Island, create one there
 			if(hasOrphanedIsland()) {
-				next = getOrphanedIsland();
+				next = getOrphanedIslands().pop();
+				dolast = true;
 			} else {
 				next = nextIslandLocation(last);
 			}
-
+			
 			generateIslandBlocks(next.x, next.z, player, skySMP.skyworld);
 			registerPlayerIsland(player.getName(), next);
 			protectIsland(player, player.getName());
 			teleportHome(player);
+			if(!dolast){
 			lastIsland = next;
+			}
+			
+			Island home = getPlayerIsland(player.getName());
+
+			Block highest = skySMP.skyworld.getHighestBlockAt(home.x, home.z);
+			Iterator<ProtectedRegion> it = getWorldGuard().getRegionManager(skySMP.skyworld).getApplicableRegions(highest.getLocation()).iterator();
+			while(it.hasNext()){
+				ProtectedRegion region = it.next();
+				if(!region.getOwners().contains(getWorldGuard().wrapPlayer(player))){
+					 getWorldGuard().getRegionManager(skySMP.skyworld).removeRegion(region.getTypeName());
+				}
+			}
 			//run the item remover again... just to be safe. ;)
 			player.getInventory().clear();
 			List<Entity> Entities = player.getNearbyEntities(15,15,15);
@@ -217,7 +239,6 @@ public class IslandManager {
 			while (ent.hasNext()) {
 				ent.next().remove();
 			}
-
 		} catch (Exception ex) {
 			player.sendMessage("Could not create your Island. Please contact a server moderator.");
 			setLastIsland(last);
@@ -330,11 +351,13 @@ public class IslandManager {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		
 	}
 
 
 	public void removeOwnerFromIsland(String owner, String player)
 	{
+		
 		try
 		{
 			if (hasIsland(owner) && getWorldGuard().getRegionManager(skySMP.skyworld).hasRegion(owner.toLowerCase()+"Island"))
@@ -364,13 +387,6 @@ public class IslandManager {
 	}
 
 
-
-	public void addOrphan(Island island)
-	{
-		orphaned.push(island);
-		saveOrphanedIslands();
-	}
-
 	public void unregisterPlayerIsland(String player)
 	{
 		playerIslands.remove(player);
@@ -399,15 +415,9 @@ public class IslandManager {
 	}
 
 	public void deleteIsland(String playerName) {
+		int bf = orphaned.size();
 		if(hasIsland(playerName)) {
-			if(getWorldGuard().getRegionManager(skySMP.skyworld).hasRegion(playerName.toLowerCase() + "Island")){
-				getWorldGuard().getRegionManager(skySMP.skyworld).removeRegion(playerName.toLowerCase() + "Island");
-				try {
-					getWorldGuard().getRegionManager(skySMP.skyworld).save();
-				} catch (ProtectionDatabaseException e) {
-					e.printStackTrace();
-				}
-			}
+			unprotectIsland(playerName);
 			Island island = getPlayerIsland(playerName);
 			for(int x = island.x - 50; x < island.x + 50; x++) {
 				for(int y = islandY - 200; y < skySMP.skyworld.getMaxHeight(); y++) {
@@ -441,16 +451,20 @@ public class IslandManager {
 	}
 
 	public boolean hasOrphanedIsland() {
-		return !orphaned.empty();
+		if(orphaned.isEmpty()){
+			return false;
+		}else{
+			return true;
+		}
 	}
+	
 	public Island getOrphanedIsland() {
 		if(hasOrphanedIsland()) {
 			return orphaned.pop();
 		}    
-
+		
 		Island spawn = new Island(skySMP.SPAWN_X,  skySMP.SPAWN_Z);
-
-
+		
 		return spawn;
 	}
 
@@ -460,7 +474,7 @@ public class IslandManager {
 		}    
 	}
 
-	public void protectIsland(CommandSender sender, String player){
+	public boolean protectIsland(CommandSender sender, String player){
 		try
 		{
 			if (hasIsland(player) && !getWorldGuard().getRegionManager(skySMP.skyworld).hasRegion(player.toLowerCase()+"Island")){
@@ -486,53 +500,14 @@ public class IslandManager {
 				region.setFlag(DefaultFlag.PVP, DefaultFlag.PVP.parseInput(getWorldGuard(), sender, "deny"));
 				getWorldGuard().getRegionManager(skySMP.skyworld).addRegion(region);
 				getWorldGuard().getRegionManager(skySMP.skyworld).save();
-			}else if(hasIsland(player) && getWorldGuard().getRegionManager(skySMP.skyworld).hasRegion(player.toLowerCase()+"Island")){
-
-				if(getWorldGuard().getRegionManager(skySMP.skyworld).getRegion(player.toLowerCase()+"Island").getMaximumPoint().equals(getProtectionVectorLeft(getPlayerIsland(player))) &&
-						getWorldGuard().getRegionManager(skySMP.skyworld).getRegion(player.toLowerCase()+"Island").getMinimumPoint().equals(getProtectionVectorRight(getPlayerIsland(player)))){
-					ProtectedRegion region = getWorldGuard().getRegionManager(skySMP.skyworld).getRegion(player.toLowerCase()+"Island");
-					DefaultDomain owners = new DefaultDomain();
-					if(prtymanager.hasParty(player)){
-						Party plrparty = prtymanager.getPlayerParty(player);
-						for(String cmem : plrparty.getMembers()){
-							if(!cmem.equals("EmptySlot")){
-								owners.addPlayer(cmem);
-							}
-						}
-					}
-					owners.addPlayer(player);
-					region.setOwners(owners);
-					getWorldGuard().getRegionManager(skySMP.skyworld).save();
-				}else{
-					getWorldGuard().getRegionManager(skySMP.skyworld).removeRegion(player.toLowerCase()+"Island");
-					ProtectedRegion region = null;
-					DefaultDomain owners = new DefaultDomain();
-					region = new ProtectedCuboidRegion(player.toLowerCase() +"Island",getProtectionVectorLeft(getPlayerIsland(player)), getProtectionVectorRight(getPlayerIsland(player)));
-					if(prtymanager.hasParty(player)){
-						Party plrparty = prtymanager.getPlayerParty(player);
-						for(String cmem : plrparty.getMembers()){
-							if(!cmem.equals("EmptySlot")){
-								owners.addPlayer(cmem);
-							}
-						}
-					}
-					owners.addPlayer(player);
-					region.setOwners(owners);
-					region.setParent(getWorldGuard().getRegionManager(skySMP.skyworld).getRegion("__Global__"));
-					if(skySMP.showmsg){
-					region.setFlag(DefaultFlag.GREET_MESSAGE, DefaultFlag.GREET_MESSAGE.parseInput(getWorldGuard(), sender, "You are entering a protected island area. (" +player + ")"));
-					region.setFlag(DefaultFlag.FAREWELL_MESSAGE, DefaultFlag.FAREWELL_MESSAGE.parseInput(getWorldGuard(), sender, "You are leaving a protected island area. (" +player + ")"));
-					}
-					region.setFlag(DefaultFlag.PVP, DefaultFlag.PVP.parseInput(getWorldGuard(), sender, "deny"));
-					region.setFlag(DefaultFlag.PVP, DefaultFlag.PVP.parseInput(getWorldGuard(), sender, "deny"));
-					getWorldGuard().getRegionManager(skySMP.skyworld).addRegion(region);
-					getWorldGuard().getRegionManager(skySMP.skyworld).save();
-				}
+				return true;
 			}else{
-				sender.sendMessage("Player doesn't have an island or it's already protected!");
+				sender.sendMessage(ChatColor.DARK_RED + "Player doesn't have an island or it's already protected!");
+				return false;
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			return false;
 		}
 	}
 
@@ -557,23 +532,19 @@ public class IslandManager {
 		return new BlockVector(island.x - 50, 0, island.z - 50);
 	}
 
-
-	public boolean hasIsland(final Player player) {
-		if (getIslandList().containsKey(player.getName())) {
-			return true;
-		} else if (getIslandList().containsKey(player.getName().toLowerCase())) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-
 	public void teleportHome(Player player) {
 		Island home = getPlayerIsland(player.getName());
 
 		Block highest = skySMP.skyworld.getHighestBlockAt(home.x, home.z);
 		player.teleport(highest.getLocation().add(0.5, 0, 0.5));
+
+	}
+	
+	public void teleportHomeOther(String player, Player target) {
+		Island home = getPlayerIsland(player);
+
+		Block highest = skySMP.skyworld.getHighestBlockAt(home.x, home.z);
+		target.teleport(highest.getLocation().add(0.5, 0, 0.5));
 
 	}
 
@@ -605,4 +576,36 @@ public class IslandManager {
 
 		return (WorldGuardPlugin) plugin;
 	}
+	
+	
+	public void checkislands(CommandSender cs){
+		
+		Set<String> r = getWorldGuard().getRegionManager(skySMP.skyworld).getRegions().keySet();
+		getWorldGuard().getRegionManager(skySMP.skyworld).getRegions().keySet().removeAll(r);
+		
+		/*for(int i = 0; i <= r.size(); i++){
+			//getWorldGuard().getRegionManager(skySMP.skyworld).removeRegion(r.);
+			r.
+		}*/
+		
+		
+		
+		Iterator<Entry<String, Island>> it = playerIslands.entrySet().iterator();
+		while(it.hasNext()){
+			
+			Entry<String, Island> curr = it.next();
+			String hell = curr.getKey();
+
+			protectIsland(cs ,hell); 
+		}
+		
+		try {
+			getWorldGuard().getRegionManager(skySMP.skyworld).save();
+		} catch (ProtectionDatabaseException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
 }

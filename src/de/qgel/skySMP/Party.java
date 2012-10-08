@@ -19,7 +19,7 @@ public class Party implements Serializable {
         m2 = member2;
         m3 = "EmptySlot";
         m4 = "EmptySlot";
-        pSize = 2;
+        pSize = 1;//may need to change to 2 for compadablity
         pIsland = island;
         members = new ArrayList<String>();
         

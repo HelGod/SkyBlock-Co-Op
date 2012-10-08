@@ -9,4 +9,9 @@ public class Island implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public int x;
 	public int z;
+	
+	public Island(int xi, int zi){
+		x= xi;
+		z = zi;
+	}
 }

@@ -14,6 +14,8 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 
 import de.qgel.skySMP.Island;
+
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentWrapper;
@@ -33,6 +35,7 @@ public class skySMP extends JavaPlugin {
 	private Island centerIsland;
 	private PartyManager prtymanager = new PartyManager();
 	private IslandManager islandmanager = new IslandManager(this);
+	private int task = 0;
 	@Override
 	public void onDisable() {
 
@@ -65,6 +68,7 @@ public class skySMP extends JavaPlugin {
 			PluginDescriptionFile pdfFile = this.getDescription();
 
 			System.out.println( pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!" );
+		
 
 			//=======[-Metrics-]=======
 			try {
