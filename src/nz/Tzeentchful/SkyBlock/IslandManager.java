@@ -46,7 +46,7 @@ public class IslandManager {
 
 	private Island lastIsland = new Island(0, 0);
 	private skySMP plugin;
-	private static int islandY = 190;
+	private static int islandY = 100;
 	private static int islandSpacing = 120;
 
 	PartyManager prtymanager = new PartyManager();
